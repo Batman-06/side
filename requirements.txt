@@ -1,0 +1,18 @@
+# Agentic AI course — pinned dependencies
+# Install into the conda "test" env (Python 3.13):
+#     conda activate test
+#     pip install -r requirements.txt
+#     python -m ipykernel install --user --name test --display-name "Python (test)"
+# See run.txt for full instructions.
+#
+# Only needed for the "SOTA" cells (live model). The "from scratch" cells are
+# pure standard library and need none of these.
+
+openai==3.22.1        # unit SOTA cells + phase-1 notebooks 02/04
+mcp==2.2.0            # phase-1 MCP notebooks 03/04 + mcp_server.py (2.x: MCPServer API)
+jupyterlab==4.*       # run notebooks in the browser (pulls nbconvert/ipykernel/nbformat)
+
+# Pulled in transitively by jupyterlab, pinned here for reproducibility:
+nbconvert==7.17.1     # headless execution (jupyter nbconvert --execute)
+ipykernel==7.2.0      # the "Python (test)" kernel
+nbformat==5.10.4      # notebook read/validate

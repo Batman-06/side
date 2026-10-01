@@ -1,0 +1,178 @@
+===========================================================================
+ HOW TO RUN — Agentic AI course notebooks
+ (unit1–unit9  +  phase-1 tool-calling/MCP notebooks 01–04)
+===========================================================================
+
+Verified on: macOS, conda env "test", Python 3.13, openai 3.22.1, mcp 2.2.0.
+
+---------------------------------------------------------------------------
+0. TL;DR
+---------------------------------------------------------------------------
+    conda activate test
+    pip install openai mcp jupyterlab
+    python -m ipykernel install --user --name test --display-name "Python (test)"
+    export OPENAI_API_KEY="sk-..."      # only needed for the "SOTA" cells
+    jupyter lab                         # or open the .ipynb files in VS Code
+
+Then open any unit*.ipynb and Run All. Pick the "Python (test)" kernel.
+
+---------------------------------------------------------------------------
+1. WHAT RUNS WITH vs WITHOUT AN API KEY
+---------------------------------------------------------------------------
+Every unit notebook is split into two kinds of cells:
+
+  • "From scratch" cells  -> plain Python, NO API key, NO internet.
+                             These always run. (This is ~half of every unit.)
+  • "SOTA" cells          -> call the OpenAI API, so they need OPENAI_API_KEY
+                             and will incur a small cost (pennies).
+
+A few "SOTA" cells are PSEUDO-CODE only (they just print an explanation and
+need no key / no network):
+  - unit5 §6  sandboxing  (real-sandbox pattern, commented)
+  - unit7 §5  benchmarks  (SWE-bench loading pattern, commented)
+  - unit9 §1  fine-tuning (JSONL + fine_tuning.jobs pattern, commented)
+  - unit9 §2  RLHF/DPO    (preference-dataset pattern, commented)
+
+So with NO key you still get a complete, runnable course; the key only
+"lights up" the live-model half.
+
+---------------------------------------------------------------------------
+2. ENVIRONMENT
+---------------------------------------------------------------------------
+Uses the existing conda env "test" (Python 3.13).
+
+    conda activate test
+
+(If you ever recreate it:  conda create -n test python=3.13 -y )
+
+---------------------------------------------------------------------------
+3. PACKAGES
+---------------------------------------------------------------------------
+Required (install once, into the "test" env):
+
+    pip install openai mcp jupyterlab
+
+  openai      3.x  — all unit "SOTA" cells + 02/04 phase-1 notebooks
+  mcp         2.x  — phase-1 MCP notebooks (03/04) and mcp_server.py
+                     NOTE: mcp 2.x renamed FastMCP -> MCPServer
+                     (mcp.server.mcpserver). mcp_server.py already uses the
+                     2.x API, so do NOT pin mcp<2.
+  jupyterlab       — to run notebooks in the browser
+                     (brings nbconvert, ipykernel, nbformat with it)
+
+Standard-library only (nothing to install): os, re, json, math, sys, time,
+collections, contextlib, ast — used by the "from scratch" cells.
+
+Pinned versions known-good:
+    openai==3.22.1   mcp==2.2.0   nbconvert==7.17.1
+    ipykernel==7.2.0   nbformat==5.10.4
+
+---------------------------------------------------------------------------
+4. ENVIRONMENT VARIABLES
+---------------------------------------------------------------------------
+    OPENAI_API_KEY   (required ONLY for SOTA cells)
+
+Set it for the session:
+    export OPENAI_API_KEY="sk-..."
+
+Or persist it (zsh):
+    echo 'export OPENAI_API_KEY="sk-..."' >> ~/.zshrc && source ~/.zshrc
+
+Each unit's Setup cell prints whether the key is detected:
+    ✅ key set — SOTA cells will run
+    ⚠️  no OPENAI_API_KEY — from-scratch cells still run; SOTA cells need a key
+
+No other env vars are needed. (The optional Batch/fine-tune/E2B patterns in
+the pseudo cells would need their own keys, but those cells don't execute.)
+
+---------------------------------------------------------------------------
+5. REGISTER THE KERNEL (so Jupyter/VS Code can find the env)
+---------------------------------------------------------------------------
+    conda activate test
+    python -m ipykernel install --user --name test --display-name "Python (test)"
+
+In the notebook UI, select the "Python (test)" kernel (top-right).
+
+---------------------------------------------------------------------------
+6. HOW TO RUN — three ways
+---------------------------------------------------------------------------
+A) VS Code (you already have it open):
+   - Open the .ipynb, click the kernel picker (top-right), choose "Python (test)".
+   - Run All. from-scratch cells work immediately; SOTA cells need the key.
+
+B) JupyterLab (browser):
+       conda activate test
+       export OPENAI_API_KEY="sk-..."
+       jupyter lab
+   - Open a unit, select the "Python (test)" kernel, Run All.
+
+C) Headless (run a whole notebook from the terminal, saves outputs in place):
+       conda activate test
+       export OPENAI_API_KEY="sk-..."     # omit to run only from-scratch cells
+       jupyter nbconvert --to notebook --execute --inplace unit1_reasoning_and_control.ipynb
+   Run every notebook at once:
+       for nb in unit*.ipynb; do \
+         jupyter nbconvert --to notebook --execute --inplace "$nb"; done
+   (Without a key, SOTA cells will raise — add  --allow-errors  to continue.)
+
+---------------------------------------------------------------------------
+7. SUGGESTED ORDER
+---------------------------------------------------------------------------
+Phase 1 (tools & MCP — index.md Section 2):
+    01_tool_calling_from_scratch.ipynb   (stdlib only)
+    02_tool_calling_with_sdk.ipynb       (needs openai + key)
+    03_mcp_from_scratch.ipynb            (imports mcp_server_raw.py; stdlib only)
+    04_mcp_with_library.ipynb            (needs mcp + openai; imports mcp_server.py)
+
+Then the units (each maps to an index.md section):
+    unit1_reasoning_and_control.ipynb          §1 reasoning & control
+    unit2_memory_and_state.ipynb               §3 memory
+    unit3_knowledge_and_grounding.ipynb        §4 RAG
+    unit4_multi_agent_systems.ipynb            §5 multi-agent
+    unit5_safety_guardrails_security.ipynb     §6 safety
+    unit6_structured_io_and_reliability.ipynb  §7 structured I/O
+    unit7_evaluation_and_observability.ipynb   §8 eval
+    unit8_cost_latency_efficiency.ipynb        §9 cost/latency
+    unit9_learning_and_adaptation.ipynb        §10 learning
+
+Helper .py files (imported BY the phase-1 notebooks — keep them):
+    mcp_server_raw.py — required by 03 (imported + launched as a subprocess)
+    mcp_server.py     — required by 04 (imported in-process as the MCPServer obj)
+    NOTE: units 1-9 do NOT use these two files at all. They matter only for the
+    phase-1 MCP notebooks (03/04).
+
+Companion files (docs / data, not imported by code):
+    index.md          — component map / study index
+    answers.md        — interview deep-dive model answers
+    RESOURCES.md      — consolidated reading list per unit
+    research_notes.txt — test data read by unit4's researcher agent
+
+---------------------------------------------------------------------------
+8. THE MCP SERVER FILES
+---------------------------------------------------------------------------
+mcp_server.py — exposes 5 math tools (mcp 2.x MCPServer API). Notebook 04
+  imports it in-process (`from mcp_server import mcp`), so the FILE must be
+  present to run 04 — but you do NOT need to start it separately.
+  Optionally, you can also run it as a real stdio MCP server (e.g. to wire it
+  into Claude Desktop):
+      conda activate test
+      python mcp_server.py        # stdio MCP server; Ctrl-C to stop
+
+mcp_server_raw.py — the no-library version (pure stdlib). Notebook 03 both
+  imports it and launches it as a subprocess, so the FILE must be present to
+  run 03. You don't invoke it by hand.
+
+Again: units 1-9 need neither file.
+
+---------------------------------------------------------------------------
+9. TROUBLESHOOTING
+---------------------------------------------------------------------------
+- "No module named openai/mcp"  -> wrong kernel. Confirm the notebook kernel
+  is "Python (test)", and that you pip-installed into the active "test" env
+  (run:  python -c "import sys; print(sys.executable)"  — must be .../envs/test/).
+- "No module named 'mcp.server.fastmcp'" -> you're on mcp 2.x (expected).
+  The code uses mcp.server.mcpserver.MCPServer. Don't downgrade.
+- 401 / AuthenticationError -> OPENAI_API_KEY missing or invalid for SOTA cells.
+- RateLimit/quota errors on SOTA cells -> billing/quota on the OpenAI account.
+- Want zero cost -> just don't set the key; run only the from-scratch cells.
+===========================================================================
